@@ -4,11 +4,9 @@ import google.generativeai as genai
 from pinecone import Pinecone
 from app.config import settings
 
-# 1. Configure Gemini
 genai.configure(api_key=settings.GEMINI_API_KEY)
 generation_model = genai.GenerativeModel('gemini-2.5-flash')
 
-# 2. Configure Pinecone
 pc = Pinecone(api_key=settings.PINECONE_API_KEY)
 index = pc.Index(settings.PINECONE_INDEX_NAME)
 
@@ -18,20 +16,16 @@ def embed_text(text: str):
     Includes a fallback for Quota errors so the app doesn't crash during demos.
     """
     try:
-        # Try using the real API
         result = genai.embed_content(
-            model="models/text-embedding-004", # Switched to newer model
+            model="models/text-embedding-004",
             content=text,
             task_type="retrieval_query"
         )
         return result['embedding']
     except Exception as e:
         print(f"Warning: Embedding API failed ({e}). Using mock vector for demo.")
-        # FALLBACK: Generate a random 768-dim vector so the code keeps running
-        # This ensures you can still test the flow even if Google blocks the free tier
         return [random.uniform(-0.1, 0.1) for _ in range(768)]
 
-# --- SEEDING FUNCTION ---
 def seed_database():
     """Populates Pinecone with sample data"""
     documents = [
@@ -52,24 +46,19 @@ def seed_database():
             "values": embedding,
             "metadata": {"text": doc['text']}
         })
-        # SLEEP to avoid Rate Limits (429 Errors)
         time.sleep(2.0) 
-    
-    # Upsert to Pinecone
+        
     try:
         index.upsert(vectors=vectors)
         return {"status": "Database seeded successfully", "count": len(vectors)}
     except Exception as e:
         return {"status": "Error upserting to Pinecone", "detail": str(e)}
 
-# --- RAG FUNCTION ---
 def get_rag_response(question: str) -> dict:
     start_time = time.time()
     
-    # 1. Embed the User's Question
     query_embedding = embed_text(question)
     
-    # 2. Query Pinecone
     try:
         search_results = index.query(
             vector=query_embedding,
@@ -82,12 +71,11 @@ def get_rag_response(question: str) -> dict:
         relevant_docs = []
     
     if not relevant_docs:
-        # Fallback if vector search fails or is empty
+      
         relevant_docs = ["FastAPI is a web framework.", "Docker is for containers."] 
     
     context_str = "\n".join(relevant_docs)
 
-    # 3. Generate Answer with Gemini
     prompt = f"""
     You are a helpful technical assistant. 
     Context: {context_str}
