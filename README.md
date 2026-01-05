@@ -42,4 +42,97 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## 3. Configuration
 
+Create a `.env` file in the root directory:
+
+```ini
+GEMINI_API_KEY=your_google_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+```
+
+## 4. Run the API
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The API will be available at:
+
+```arduino
+[uvicorn app.main:app --reload](http://localhost:8000)
+```
+
+## Running with Docker
+
+Build and run the containerized application:
+
+```bash
+docker build -t gemini-rag .
+docker run -p 8000:8000 --env-file .env gemini-rag
+```
+
+## Usage
+
+### 1. Seed the Database
+
+Since the Pinecone index starts empty, seed it with sample data:
+
+```bash
+curl -X POST http://localhost:8000/seed
+```
+Response:
+
+```json
+{
+  "status": "Database seeded successfully",
+  "count": 4
+}
+```
+
+### 2. Query the AI
+
+Ask a question. The system retrieves context from Pinecone and answers based on facts:
+
+```bash
+curl -X POST "http://localhost:8000/query" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is RAG?"}'
+```
+
+Response:
+
+```json
+{
+  "answer": "RAG (Retrieval-Augmented Generation) optimizes LLM output by referencing an authoritative knowledge base...",
+  "source_documents": [
+    "RAG (Retrieval-Augmented Generation) optimizes LLM output..."
+  ],
+  "processing_time": 1.24
+}
+```
+### 3. API Documentation
+
+Interactive Swagger UI:
+
+```bash
+http://localhost:8000/docs
+```
+
+## Project Structure
+
+'''
+├── app/
+│   ├── __init__.py
+│   ├── main.py          # API endpoints & entry point
+│   ├── models.py        # Pydantic schemas
+│   ├── services.py      # Business logic (Gemini + Pinecone)
+│   └── config.py        # Environment configuration
+├── Dockerfile           # Multi-stage production build
+├── requirements.txt     # Python dependencies
+└── .env                 # Secrets (not committed to Git)
+'''
+
+## License
+
+MIT
