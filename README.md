@@ -121,7 +121,7 @@ http://localhost:8000/docs
 
 ## Project Structure
 
-'''
+```text
 ├── app/
 │   ├── __init__.py
 │   ├── main.py          # API endpoints & entry point
@@ -131,7 +131,7 @@ http://localhost:8000/docs
 ├── Dockerfile           # Multi-stage production build
 ├── requirements.txt     # Python dependencies
 └── .env                 # Secrets (not committed to Git)
-'''
+```
 
 ## License
 
